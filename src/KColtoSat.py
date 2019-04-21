@@ -1,23 +1,9 @@
 import sys
-
-class Edge:
-    w = ''
-    v = ''
-
-    def __init__(self, w, v):
-        if int(w) < 1 or int(v) < 1:
-            raise ValueError
-        self.w = w
-        self.v = v
-
-    def __eq__(self, value):
-        
-        if self.w == value.w and self.v == value.v:
-            return True
-        elif self.w == value.v and self.v == value.w:
-            return True
-        return False
-        
+import copy
+from reduction_modules import Literal
+from reduction_modules import Clause
+from reduction_modules import Edge
+from reduction_modules import Node
 
 def read_initial():
 
@@ -60,11 +46,11 @@ def read_initial():
             if linetype == 'colours':
                 if len(line_val) > 2:
                     raise ValueError
-                k = line_val[1]
-                edges = []
-                to_cnf(k, num_nodes, num_edges, edges)
-                for edge in edges:
-                    print (' '.join(edge))
+                k = int(line_val[1])
+                
+                to_cnf(k, num_nodes, num_edges)
+                # for edge in edges:
+                #     print (' '.join(edge))
                 break
             elif linetype != 'c':
                 raise ValueError
@@ -74,46 +60,83 @@ def read_initial():
 
 
 # Converts a DIMACS COL format and transforms it into its equivalent SAT format and prints it out in the form DIMACS CNF
-def to_cnf(k, num_nodes, num_edges, edges):
+def to_cnf(k, num_nodes, num_edges):
     # kCol is a graph with k number of colors.
-    '''
-    For each node i in the graph, introduce k new SAT variables
-        
-        y(i,1), y(i,2), . . . y(i,k)
 
-    Each variable y(i,j) will be true iff node i is coloured with colour j. We need three types of clauses.
-        • ‘At-least-one’ clauses (ALO). A single clause {y(i,1), y(i,2), . . . y(i,k)} for each node i, which says that each node has
-        to have at least one colour.
-        • ‘At-most-one’ clauses (AMO). A clause for every node and pair j, j(prime) of colours. The clause {¬y(i,j) , ¬y(i,j0)} says
-        that node i can’t be both colour j and colour j(prime).
-        • ‘Edge’ clauses. For each edge in the graph connecting nodes i and i(prime), one clause for each colour j. The clause
-        {¬y(i,j) , ¬y(i,j)} says that either i or i(prime) is not coloured with j (or neither is).
-    '''
-
+    nodes = []
+    edges = []
     # p edge num_nodes num_edges
     # colours k for the k-colouring problem.
-    line = sys.stdin.readline().rstrip()
-    line_vars = line.split()
-    line_type = line_vars[0]
-    edges = []
-    if line_type == 'c':
-        to_cnf(k, num_nodes, num_edges, edges)
-    elif line_type == 'e':
-        # Edge values
-        # e W V
-        # Store mappings for W, V 
+    # line = sys.stdin.readline().rstrip()
+    for line in sys.stdin:
 
-        if len(line_vars) != 3:
-            raise ValueError
+        line_vars = line.rstrip().split()
+        line_type = line_vars[0]
+        if line_type == 'e':
+            # Edge values
+            # e W V
+            # Store mappings for each edge (W, V)
+            if len(nodes) > num_nodes:
+                raise ValueError
+            if len(line_vars) != 3:
+                raise ValueError
 
-        edge = Edge(line_vars[1], line_vars[2])
-        
-        if edge in edges:
+            node_w = Node(int(line_vars[1]))
+            node_v = Node(int(line_vars[2]))
+            if node_w not in nodes:
+                nodes.append(node_w)
+            else:
+                # Uses the existing node instead
+                node_w = next((x for x in nodes if x.value == node_w.value), node_w)
+
+            if node_v not in nodes:
+                nodes.append(node_v)
+            else:
+                # Uses the existing node instead
+                node_v = next((x for x in nodes if x.value == node_v.value), node_v)
+
+            edge = Edge(node_w, node_v)
+            
+            if edge in edges:
+                raise ValueError
+            
+            
+
+            edges.append(edge)
+        elif line_type != 'c':
+            # Ignores comments
             raise ValueError
-        
-        edges.append(edge)
-        
         # Number of output Variables = Number of colors * number of nodes
+
+    if len(edges) != num_edges or len(nodes) != num_nodes:
+        raise ValueError
+    
+    num_variables = k * num_nodes
+    num_lines = num_variables + (num_edges * k) + num_nodes
+    color_index = 1
+    print 'p cnf ' + str(num_variables) + ' ' + str(num_lines)
+
+    for node in nodes:
+        # Prints the color values for each node
+        for i in range(0, k):
+            # Distributes unique color values for each node
+            color_value = (i*k) + color_index
+            node.add_color(color_value)
+        print str(node) + '0'
+        
+        color_index += 1
+
+    # # TODO Print out At most One
+    for node in nodes:
+        for clause in node.amo_clauses():
+            print str(clause) + '0'
+
+    # TODO Print out Edge clauses
+    for edge in edges:
+        for clause in edge.color_clauses():
+            print str(clause) + '0'
+    
+
     # Comments are allowed anywhere
     # Ignore all descriptors in section 2.1 
     # Duplicate edges not allowed
@@ -121,6 +144,6 @@ def to_cnf(k, num_nodes, num_edges, edges):
     # An edge is considered the same whichever order the nodes are listed
     # The duplicate ban means you can't have both edges 2-3 and 3-2
     # For 3-Col the number of colours is required to be exactly 3.
-    return
+    
 
 read_initial()

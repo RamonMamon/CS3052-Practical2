@@ -1,57 +1,6 @@
 import sys
-
-class Literal:
-    def __init__(self, variable):
-        self.is_negative = False
-        self.variable = 0
-
-        if '--' in variable:
-            raise ValueError
-        elif variable[0] == '-':
-            # Storing the number after the negative value to allow comparison
-            self.is_negative = True
-            self.variable = int(variable[1:])
-        else:
-            self.variable = int(variable)    
-
-    def value(self):
-        if self.is_negative:
-            return -1 * self.variable
-        return self.variable
-
-    def __str__(self):
-        # print ('TO STRING')
-        return str(self.value())
-
-    # Checks if the other literal has the same variable.
-    def __eq__(self, that):
-        if self.variable == that.variable:
-            return True
-        return False
-        
-        
-class Clause:
-    # literals = []
-    # num_literals = 0
-    def __init__(self):
-        self.literals = []
-
-    def insert_literal(self, literal):
-        # Check each character and see if it's already saved
-        # if literal != '0' and literal not in self.literals:
-        self.literals.append(literal)
-            # self.num_literals += 1
-
-    def get_literal(self, index):
-        return self.literals[index]
-
-    def pop(self, index = -1):
-        return self.literals.pop(index)
-    def __str__(self):
-        string = ''
-        for literal in self.literals:
-            string += str(literal) + ' '
-        return string
+from reduction_modules import Literal
+from reduction_modules import Clause
 
 
     # Make a to_string function
@@ -93,8 +42,6 @@ def read_initial():
     except ValueError:
         print('Invalid Format')
         exit(1)
-        
-
 
 def to_sat3(num_vars, num_lines, output):
 
@@ -104,17 +51,15 @@ def to_sat3(num_vars, num_lines, output):
     clauses = []
     new_var_index = num_vars + 1
     
-    while True:
+    for line in sys.stdin:
         # Stores each clause 
-        # print("Hello")
-        line_vars = sys.stdin.readline().strip().split()
+        line_vars = line.strip().split()
         if len(line_vars) == 0:
             break
-        # print (len(line_vars))
         clauses.append(line_vars)
         if len(clauses) > num_lines:
             raise ValueError
-
+    
     for line in clauses:
         # Parses each line 
         literal_index = 0
@@ -140,7 +85,6 @@ def to_sat3(num_vars, num_lines, output):
                 output.append(clause)
                 clause = Clause()
                 literal_index = 0
-                # num_lines += 1
 
             elif literal_index % 3 == 0 and literal_index != 0:
                 # Splits the clauses if the number of clauses is greater than 3
@@ -183,3 +127,5 @@ def to_sat3(num_vars, num_lines, output):
         print(clause)
 
 read_initial()
+# for line in sys.stdin:
+#     print (line.rstrip())
