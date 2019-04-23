@@ -6,80 +6,73 @@ def to_sat3(num_vars, num_lines, input_source, output_file):
 
     # Read SAT in CNF from stdin
     # Check the first character of every line
-    output = []
-    variables = []
     clauses = []
-    new_var_index = num_vars + 1
-    
     for line in input_source:
         # Stores each clause 
         line_vars = line.strip().split()
         if len(line_vars) == 0:
             continue
-        # clauses.append(Clause([i for i in line_vars ]))
-        clauses.append(line_vars)
+        clauses.append(Clause([i for i in line_vars]))
+        # clauses.append(line_vars)
         assert len(clauses) <= num_lines
-    
-    for line in clauses:
+
+    output_clauses = []
+    variables = []
+
+    for clause in clauses:
         # Parses each line 
         literal_index = 0
-        clause = Clause()      
-        while True:
-            if len(line) == 0:
-                break
-            
-            # Gets the character at the first index
-            literal = Literal(line.pop(0))
-            
+        temp_clause = Clause()      
+
+        for i in range(len(clause)):
+            literal = clause.get_literal(i)
+
+            # Checks if the literal value is less than the number of variables
+            assert literal.get_variable() <= num_vars
+
             # Check each character and see if it's already saved
             if literal.value() != 0 and literal not in variables:
                 variables.append(literal)
 
             # Check if the number of variables is greater than num_vars
             assert len(variables) <= num_vars
-            
+
             if literal.value() == 0:
                 # Creates a new clause when the literal is 0
-                clause.insert_literal(literal)
-                output.append(clause)
-                clause = Clause()
-                literal_index = 0
 
-            elif literal_index % 3 == 0 and literal_index != 0:
-                # Splits the clauses if the number of clauses is greater than 3
+                temp_clause.insert_literal(literal)
+                output_clauses.append(temp_clause)
+                temp_clause = Clause()
 
-                # Returns the third and fourth literals to the beginning of the list of Line literals
-                third = str(literal)
-                fourth = str(clause.pop())
+            elif len(temp_clause) == 3:
+                # Creates a new clause that is connected by a new variable
 
-                line.insert(0, third)
-                line.insert(0, fourth)
-
-                var_string = str(new_var_index)
-                new_variable = Literal(var_string)
-                clause.insert_literal(new_variable)
-                clause.insert_literal(Literal('0'))
-
-                line.insert(0,'-' + var_string)
-
-                output.append(clause)
-                clause = Clause()
-                
-                num_lines += 1
                 num_vars += 1
-                new_var_index += 1
-                literal_index = 0
+                num_lines += 1
+                third_literal_value = str(temp_clause.pop())
+
+                new_variable = Literal(str(num_vars))
+                
+
+                temp_clause.insert_literal(new_variable)
+                temp_clause.insert_literal(Literal('0'))
+                output_clauses.append(temp_clause)
+
+                temp_clause = Clause([str(-num_vars), third_literal_value, str(literal) ])
 
             else:
-                # Appends the literal to the output_line
-                clause.insert_literal(literal)
-                if len(line) == 0:
-                    clause.insert_literal(Literal('0'))
-                    output.append(clause)
-                literal_index += 1  
+                # Appends the literal to the clause.
 
-    assert num_lines <= len(output)
+                temp_clause.insert_literal(literal)
 
-    print ('p cnf ' + str(len(variables)) + ' ' + str(len(output)), file = output_file)
-    for clause in output:
+                if i == len(clause):
+                    # Add a 0 literal to the end of the clause
+                    
+                    temp_clause.insert_literal('0')
+                    output_clauses.append(temp_clause)
+
+    assert num_lines <= len(output_clauses)
+
+    print ('p cnf', num_vars, num_lines, file = output_file)
+    for clause in output_clauses:
         print(clause, file = output_file)

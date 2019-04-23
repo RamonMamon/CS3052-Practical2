@@ -20,18 +20,16 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
         clause = Clause([i for i in line_vars if i != '0'])
 
         for i in line_vars:
-
+            # Stores each unique literal as a variable
             literal = Literal(i)
 
             # Checks if the variable is less than the number of variables.
             assert literal.get_variable() <= num_vars
 
-            # Inserts the variable if it is unique
             if not variables.contains_literal(literal) and i != '0':
                 variables.insert_literal(literal)
             
         clauses.append(clause) 
-        
         assert len(clause) <= 3
         assert line_vars[0] != 'c'
 
@@ -40,7 +38,7 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
         num_vars += 1
 
     while len(variables) < 4:
-        # Makes the number of variables at least 4
+        # Ensures that the number of variables at least 4
         variables.insert_literal(Literal(str(num_vars)))
         num_vars += 1
     
@@ -55,28 +53,8 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
     clause_variables = []
     edges = []
 
-    for i in range(num_clauses):
-        # Connect each Clause C to x and -x not in its clause
-
-        clause_variable = clause_index + i
-
-        for j in range(num_vars):
-            
-            variable_literal = variables.get_literal(j)
-            if variable_literal not in clauses[i].literals:
-                # Appends the edges created by x and -x when connected to the clause
-
-                clause_node = Node(str(clause_variable))
-                variable = str(variable_literal.get_variable())
-                
-                edges.append(Edge(Node(variable), clause_node))
-                edges.append(Edge(Node(negation_variables[j]), clause_node))
-
-        clause_variables.append(clause_variable)
-
     for i in range(num_vars):
         # Connect x to -x and both to the colour y
-
         variable_literal = variables.get_literal(i)
         variable = str(variable_literal.get_variable())
 
@@ -86,7 +64,6 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
 
         for j in range(len(colours)):
             # Connect x and -x to y if i != j
-
             y = Node(colours[j])
 
             if j != i:
@@ -94,12 +71,10 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
                 edges.append(Edge(x_negation, y))
 
     for colour_i in colours:
-        # Connects colours to each other to make edges
-
+        # Creates edges by connecting two unique colours
         y_i = Node(colour_i)
 
         for colour_j in colours:
-
             if colour_i == colour_j:
                 continue
             y_j = Node(colour_j)
@@ -108,23 +83,23 @@ def to_kCol(num_vars, num_clauses, input_source, output_file):
             if edge not in edges:
                 edges.append(edge)
 
-        
-    # print("Variables")
-    # for i in range(num_vars):
-    #     variable_literal = variables.get_literal(i)
-    #     variable = str(variable_literal.get_variable())
+    for i in range(num_clauses):
+        # Make an edge for each node that C is not connected to 
+        clause_variable = clause_index + i
 
-    #     print (variable)
-    # print ("Negations")
-    # for variable in negation_variables:
-    #     print (variable)
-    # print ("Colours")
-    # for colour in colours:
-    #     print (colour)
-    # print ("Clauses")
-    # for clause in clause_variables:
-    #     print (clause)
-    
+        for j in range(num_vars):
+            # Appends the edges created by x and -x when connected to the clause
+            variable_literal = variables.get_literal(j)
+
+            if not clauses[i].contains_value(variable_literal.value()):
+                clause_node = Node(str(clause_variable))
+                variable = str(variable_literal.get_variable())
+                
+                edges.append(Edge(Node(variable), clause_node))
+                edges.append(Edge(Node(negation_variables[j]), clause_node))
+
+        clause_variables.append(clause_variable)
+
     # Calculate number of nodes
     num_nodes = (3 * num_vars) + num_clauses
     print ('p edge', num_nodes, len(edges), file = output_file)

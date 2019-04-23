@@ -29,7 +29,7 @@ def to_cnf(num_nodes, num_edges, input_source, output_file):
         
     
     # Parses the input edges
-    for line in sys.stdin:
+    for line in input_source:
         line_vars = line.rstrip().split()
         line_type = line_vars[0]
 
@@ -42,19 +42,17 @@ def to_cnf(num_nodes, num_edges, input_source, output_file):
         assert line_type == 'e'
         assert len(nodes) <= num_nodes
         assert len(line_vars) == 3
-
         
         node_w = Node(line_vars[1])
         node_v = Node(line_vars[2])
 
-        # print ('Hello')
-        # Uses the stored node if inside nodes
+        # Uses the stored node if node already exists
         if node_w not in nodes:
             nodes.append(node_w)
         else:
             node_w = next((x for x in nodes if x.literal == node_w.literal), node_w)
 
-        # Uses the stored node if inside nodes
+        # Uses the stored node if node already exists
         if node_v not in nodes:
             nodes.append(node_v)
         else:

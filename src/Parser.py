@@ -9,12 +9,15 @@ def parse():
     try:
         input_source = sys.stdin
         output_file = sys.stdout
-
-        if len(sys.argv) == 3:
+        
+        # Reads input from file if specified
+        if len(sys.argv) >= 3:
             input_source = open(sys.argv[2], 'r')
-        if len(sys.argv) == 4:
+        
+        # Print out to file if specified
+        if len(sys.argv) >= 4:
             output_file = open(sys.argv[3], 'w')
-
+        
         for line in input_source:
             line_val = line.rstrip().split()
             if len(line_val) == 0:
@@ -33,14 +36,20 @@ def parse():
             param2 = int(line_val[3])
             
             if parse_type == 'cnf':
+                # Takes a cnf sat input and prints it out as sat3
+
                 assert format_type == parse_type
                 to_sat3(param1, param2, input_source, output_file)
 
             elif parse_type == '3sat':
+                # Takes a cnf 3sat input and prints it out as kcol
+
                 assert format_type == 'cnf'
                 to_kCol(param1, param2, input_source, output_file)
 
             elif parse_type == 'edge':
+                # Takes a kCol input and prints it out to sat
+
                 assert format_type == parse_type
                 to_cnf(param1, param2, input_source, output_file)
 
