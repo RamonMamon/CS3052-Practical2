@@ -5,9 +5,8 @@ class Literal:
         self.state = True
         self.variable = 0
 
-        if '--' in variable:
-            raise ValueError
-        elif variable[0] == '-':
+        assert '--' not in variable
+        if variable[0] == '-':
             # Storing the number after the negative value to allow comparison
             self.state = False
             self.variable = int(variable[1:])
@@ -19,12 +18,17 @@ class Literal:
             return -1 * self.variable
         return self.variable
 
+    # Returns variable without sign
+    def get_variable(self):
+        return self.variable
+
     def __str__(self):
         # print ('TO STRING')
         return str(self.value())
 
     # Checks if the other literal has the same variable.
     def __eq__(self, that):
+        # TODO can potentiall return the variable with the sign instead
         if self.variable == that.variable:
             return True
         return False
@@ -32,18 +36,15 @@ class Literal:
     def set_state(self, val):
         self.state = val
         
-        
 class Clause:
-    # literals = []
-    # num_literals = 0
-    def __init__(self):
+    def __init__(self, literals = []):
         self.literals = []
+        for val in literals:
+            literal = Literal(val)
+            self.literals.append(literal)
 
     def insert_literal(self, literal):
-        # Check each character and see if it's already saved
-        # if literal != '0' and literal not in self.literals:
         self.literals.append(literal)
-            # self.num_literals += 1
 
     def get_literal(self, index):
         return self.literals[index]
@@ -57,9 +58,18 @@ class Clause:
             string += str(literal) + ' '
         return string
 
+    def contains_literal(self, literal):
+        if literal in self.literals:
+            return True
+        return False
+
+    def contains_value(self, value):
+        literal = Literal(value)
+        return self.contains_literal(literal)
+
     def at_most_one(self, index):
         clause = Clause()
-        for i in range(0, len(self.literals)):
+        for i in range(len(self.literals)):
             literal = copy.deepcopy(self.literals[i])
             if i != index:
                 literal.set_state(False)
@@ -70,6 +80,8 @@ class Clause:
     def __len__(self):
         return len(self.literals)
 
+    def get_literal_variable(self, index):
+        return self.literals[index].get_variable()
 
 class Edge:
     def __init__(self, w, v):
@@ -102,15 +114,12 @@ class Edge:
             clauses.append(clause)
         return clauses
     def __str__(self):
-        return str(self.w.value) + ' ' + str(self.v.value)
+        return 'e ' + str(self.w.get_value()) + ' ' + str(self.v.get_value())
         
-
-
 class Node:
     def __init__(self, val):
-        if val < 1:
-            raise ValueError
-        self.value = val
+        assert int(val) >= 1
+        self.literal = Literal(val)
         self.color = Clause()
 
     def add_color(self, val):
@@ -121,7 +130,7 @@ class Node:
         return self.color.get_literal(index)
 
     def __eq__(self, that):
-        if self.value == that.value:
+        if self.literal == that.literal:
             return True
         # TODO Perhaps add color checking in the future
         return False
@@ -135,6 +144,7 @@ class Node:
     def get_colors(self):
         return self.color
         
+    # Returns a list of clauses with all the possible at most one colours in each clause
     def amo_clauses(self):
         clauses = []
         length = self.num_colors()
@@ -142,3 +152,6 @@ class Node:
             clause = self.color.at_most_one(i)
             clauses.append(clause)
         return clauses
+
+    def get_value(self):
+        return self.literal.variable

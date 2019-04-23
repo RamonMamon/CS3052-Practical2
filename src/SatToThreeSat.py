@@ -2,63 +2,23 @@ import sys
 from reduction_modules import Literal
 from reduction_modules import Clause
 
-
-    # Make a to_string function
-def read_initial():
-
-    # implement a method of reading a command line argument which specifies
-    # the type of operation that is going to be conducted.
-    # This allows me to implement everything in just one file but also
-    # allows me to create multiple executibles using a makefile with different args
-    output = []
-    output_format = ''
-    num_lines = 0
-    num_vars = 0
-    try:
-        # tempLime = sys.stdin.read()
-
-        # print (tempLime)
-        while True:
-            line = sys.stdin.readline().rstrip()
-            line_val = line.split()
-            # print (line)
-            if len(line_val) == 0:
-                continue
-
-            linetype = line[0]
-
-            if linetype == 'p':
-                # If output format is cnf then use to_sat3 
-                # else use to_cnf
-                output_format = line_val[1]
-                if output_format != 'cnf':
-                    raise ValueError
-                num_vars = int(line_val[2])
-                num_lines = int(line_val[3])
-                to_sat3(num_vars, num_lines, output)
-                break
-            elif linetype != 'c':
-                raise ValueError
-    except ValueError:
-        print('Invalid Format')
-        exit(1)
-
-def to_sat3(num_vars, num_lines, output):
+def to_sat3(num_vars, num_lines, input_source, output_file):
 
     # Read SAT in CNF from stdin
     # Check the first character of every line
+    output = []
     variables = []
     clauses = []
     new_var_index = num_vars + 1
     
-    for line in sys.stdin:
+    for line in input_source:
         # Stores each clause 
         line_vars = line.strip().split()
         if len(line_vars) == 0:
-            break
+            continue
+        # clauses.append(Clause([i for i in line_vars ]))
         clauses.append(line_vars)
-        if len(clauses) > num_lines:
-            raise ValueError
+        assert len(clauses) <= num_lines
     
     for line in clauses:
         # Parses each line 
@@ -76,8 +36,7 @@ def to_sat3(num_vars, num_lines, output):
                 variables.append(literal)
 
             # Check if the number of variables is greater than num_vars
-            if len(variables) > num_vars:
-                raise ValueError
+            assert len(variables) <= num_vars
             
             if literal.value() == 0:
                 # Creates a new clause when the literal is 0
@@ -119,13 +78,8 @@ def to_sat3(num_vars, num_lines, output):
                     output.append(clause)
                 literal_index += 1  
 
-    if num_lines > len(output):
-        raise ValueError
+    assert num_lines <= len(output)
 
-    print ('p cnf ' + str(len(variables)) + ' ' + str(len(output)))
+    print ('p cnf ' + str(len(variables)) + ' ' + str(len(output)), file = output_file)
     for clause in output:
-        print(clause)
-
-read_initial()
-# for line in sys.stdin:
-#     print (line.rstrip())
+        print(clause, file = output_file)
